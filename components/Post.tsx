@@ -73,14 +73,19 @@ function Post({
 
   const likepost = async () => {
     if (hasLiked) {
-      await deleteDoc(doc(db, "posts", id, "likes", session.user.uid));
+      await deleteDoc(
+        doc(db, "posts", id, "likes", session?.user?.uid ?? undefined)
+      );
     } else {
-      await setDoc(doc(db, "posts", id, "likes", session.user.uid), {
-        like: true,
-        name: session.user.name,
-        userImg: session.user.image,
-        timestamp: serverTimestamp(),
-      });
+      await setDoc(
+        doc(db, "posts", id, "likes", session?.user?.uid ?? undefined),
+        {
+          like: true,
+          name: session?.user?.name ?? undefined,
+          userImg: session?.user?.image,
+          timestamp: serverTimestamp(),
+        }
+      );
     }
   };
 
@@ -89,7 +94,7 @@ function Post({
     const commentToSend = comment;
     setComment("");
     await addDoc(collection(db, "posts", id, "comments"), {
-      name: session.user.name,
+      name: session?.user?.name ?? undefined,
     });
   };
   return (
@@ -133,7 +138,7 @@ function Post({
       {comments.length > 0 && (
         <div className="ml-10 h-20 overflow-y-scroll scrollbar-thumb-black scroolbar-thin">
           {comments.map((comment) => (
-            <div key={comment.id} className="flex items-center space-x-2 mb-3">
+            <div key={comment?.id} className="flex items-center space-x-2 mb-3">
               <img
                 className="h-7 rounded-full"
                 src={comment.data().userImg}

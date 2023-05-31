@@ -69,7 +69,7 @@ function InsidHeader() {
               <RiHeartLine className="navBtn" />
               <img
                 onClick={handleSignOut}
-                src={session.user.image}
+                src={session?.user?.image ?? undefined}
                 className="h-10 w-10 rounded-full  shadow-lg"
                 alt="Avatar"
               />
