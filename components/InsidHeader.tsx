@@ -17,7 +17,12 @@ function InsidHeader() {
   const { data: session, status } = useSession();
   const [open, setOpen] = useRecoilState(modalState);
   const router = useRouter();
-
+  const handleSignOut = async () => {
+    await signOut();
+  };
+  const handleSignIn = async () => {
+    await signIn();
+  };
   console.log(session);
 
   return (
@@ -63,14 +68,14 @@ function InsidHeader() {
               <HiOutlineUserGroup className="navBtn" />
               <RiHeartLine className="navBtn" />
               <img
-                onClick={signOut}
+                onClick={handleSignOut}
                 src={session.user.image}
                 className="h-10 w-10 rounded-full  shadow-lg"
                 alt="Avatar"
               />
             </>
           ) : (
-            <button onClick={signIn}>Sign In</button>
+            <button onClick={handleSignIn}>Sign In</button>
           )}
         </div>
       </div>
