@@ -20,11 +20,22 @@ import {
   deleteDoc,
 } from "@firebase/firestore";
 import { db } from "../firebase";
-import { timeStamp } from "console";
 import Moment from "react-moment";
 import { AiFillHeart } from "react-icons/ai";
 
-type Props = {};
+type CommentType = {
+  id: string;
+  userImg: string;
+  name: string;
+  comment: string;
+  timestamp: {
+    toDate: () => Date;
+  };
+};
+
+type LikeType = {
+  id: string;
+};
 
 function Post({
   id,
@@ -41,21 +52,37 @@ function Post({
 }) {
   const { data: session } = useSession();
   const [comment, setComment] = useState("");
-  const [comments, setComments] = useState([]);
-  const [likes, setlikes] = useState([]);
+  const [comments, setComments] = useState<CommentType[]>([]);
+  const [likes, setlikes] = useState<LikeType[]>([]);
   const [hasLiked, setHasLiked] = useState(false);
 
-  useEffect(
-    () =>
-      onSnapshot(
-        query(
-          collection(db, "posts", id, "comments"),
-          orderBy("timestamp", "desc")
-        ),
-        (snapshot) => setComments(snapshot.docs)
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      query(
+        collection(db, "posts", id, "comments"),
+        orderBy("timestamp", "desc")
       ),
-    [db]
-  );
+      (snapshot) => {
+        const commentsData: CommentType[] = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            userImg: data.userImg,
+            name: data.name,
+            comment: data.comment,
+            timestamp: {
+              toDate: () => data?.timestamp?.toDate(),
+            },
+          };
+        });
+        setComments(commentsData);
+      }
+    );
+
+    return () => {
+      unsubscribe(); // Clean up the listener when the component unmounts
+    };
+  }, [db, id]);
 
   useEffect(
     () =>
@@ -72,20 +99,22 @@ function Post({
   }, [likes]);
 
   const likepost = async () => {
+    const uid = session?.user?.uid;
+
+    if (!uid) {
+      // handle the case where uid is undefined
+      console.error("User ID is undefined");
+      return;
+    }
+
     if (hasLiked) {
-      await deleteDoc(
-        doc(db, "posts", id, "likes", session?.user?.uid ?? undefined)
-      );
+      await deleteDoc(doc(db, "posts", id, "likes", uid));
     } else {
-      await setDoc(
-        doc(db, "posts", id, "likes", session?.user?.uid ?? "undefined"),
-        {
-          like: true,
-          name: session?.user?.name ?? undefined,
-          userImg: session?.user?.image,
-          timestamp: serverTimestamp(),
-        }
-      );
+      await setDoc(doc(db, "posts", id, "likes", uid), {
+        name: session?.user?.name ?? undefined,
+        userImg: session?.user?.image,
+        timestamp: serverTimestamp(),
+      });
     }
   };
 
@@ -95,8 +124,12 @@ function Post({
     setComment("");
     await addDoc(collection(db, "posts", id, "comments"), {
       name: session?.user?.name ?? undefined,
+      comment: commentToSend,
+      timestamp: serverTimestamp(),
+      userImg: session?.user?.image,
     });
   };
+
   return (
     <div className="bg-white my-7 border rounded-lg">
       <div className="flex items-center p-5 ">
@@ -139,16 +172,12 @@ function Post({
         <div className="ml-10 h-20 overflow-y-scroll scrollbar-thumb-black scroolbar-thin">
           {comments.map((comment) => (
             <div key={comment?.id} className="flex items-center space-x-2 mb-3">
-              <img
-                className="h-7 rounded-full"
-                src={comment.data().userImg}
-                alt=""
-              />
+              <img className="h-7 rounded-full" src={comment.userImg} alt="" />
               <p className="text-sm flex-1">
-                <span className="font-bold">{comment?.data()?.name}</span>{" "}
-                {comment.data().comment}
+                <span className="font-bold">{comment.name}</span>{" "}
+                {comment.comment}
               </p>
-              <Moment fromNow>{comment.data().timestamp?.toDate()}</Moment>
+              <Moment fromNow>{comment.timestamp?.toDate()}</Moment>
             </div>
           ))}
         </div>
