@@ -18,9 +18,9 @@ type Props = {};
 
 function Modal({}: Props) {
   const [open, setOpen] = useRecoilState(modalState);
-  const filePickerRef = useRef(null);
-  const captionRef = useRef(null);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const filePickerRef = useRef<HTMLInputElement | null>(null);
+  const captionRef = useRef<HTMLInputElement | null>(null);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { data: session, status } = useSession();
 
@@ -30,15 +30,15 @@ function Modal({}: Props) {
     setLoading(true);
 
     const docRef = await addDoc(collection(db, "posts"), {
-      username: session.user.username,
-      caption: captionRef.current.value,
-      profileImg: session.user.image,
+      username: session?.user?.name ?? undefined,
+      caption: captionRef.current?.value,
+      profileImg: session?.user?.image,
       timestamp: serverTimestamp(),
     });
 
     const imageRef = ref(storage, `posts/${docRef.id}/image`);
 
-    await uploadString(imageRef, selectedFile, "data_url").then(
+    await uploadString(imageRef, selectedFile ?? "", "data_url").then(
       async (snapshot) => {
         const downloadURL = await getDownloadURL(imageRef);
 
@@ -53,14 +53,14 @@ function Modal({}: Props) {
     setSelectedFile(null);
   };
 
-  const addImageToPost = (e: any) => {
+  const addImageToPost = (e: React.ChangeEvent<HTMLInputElement>) => {
     const reader = new FileReader();
-    if (e.target.files[0]) {
+    if (e.target.files && e.target.files[0]) {
       reader.readAsDataURL(e.target.files[0]);
     }
 
-    reader.onload = (readEvent: any) => {
-      setSelectedFile(readEvent.target.result);
+    reader.onload = (readEvent: ProgressEvent<FileReader>) => {
+      setSelectedFile(readEvent.target!.result as string);
     };
   };
 
@@ -109,7 +109,7 @@ function Modal({}: Props) {
                   />
                 ) : (
                   <div
-                    onClick={() => filePickerRef.current.click()}
+                    onClick={() => filePickerRef?.current?.click()}
                     className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 cursor-pointer"
                   >
                     <BiCamera
