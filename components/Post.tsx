@@ -78,7 +78,7 @@ function Post({
       );
     } else {
       await setDoc(
-        doc(db, "posts", id, "likes", session?.user?.uid ?? undefined),
+        doc(db, "posts", id, "likes", session?.user?.uid ?? "undefined"),
         {
           like: true,
           name: session?.user?.name ?? undefined,
@@ -145,7 +145,7 @@ function Post({
                 alt=""
               />
               <p className="text-sm flex-1">
-                <span className="font-bold">{comment.data().name}</span>{" "}
+                <span className="font-bold">{comment?.data()?.name}</span>{" "}
                 {comment.data().comment}
               </p>
               <Moment fromNow>{comment.data().timestamp?.toDate()}</Moment>
